@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "evalkit"
+name = "evalkit-bench"
 version = "0.1.0"
 description = "Production-grade LLM evaluation and benchmark harness"
 readme = "README.md"
