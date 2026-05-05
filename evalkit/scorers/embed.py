@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 from .base import BaseScorer, ScoreResult
 
 _MODEL_NAME = "all-MiniLM-L6-v2"
@@ -39,6 +37,8 @@ class EmbedScorer(BaseScorer):
     ) -> ScoreResult:
         if expected is None:
             return ScoreResult(score=0.0, passed=False, reason="No expected value", scorer_name=self.name)
+
+        import numpy as np
 
         model = self._get_model()
         embeddings = model.encode([output.strip(), expected.strip()])
