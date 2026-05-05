@@ -1,0 +1,37 @@
+name: "factual-qa-v1"
+description: "Basic factual recall — geography, science, arithmetic."
+model: "gpt-4o-mini"
+judge_model: "claude-haiku-4-5-20251001"
+temperature: 0.0
+max_tokens: 64
+
+cases:
+  - id: capital-france
+    prompt: "What is the capital of France? Reply with just the city name."
+    expected: "Paris"
+    scorers: [exact]
+    tags: [geography, easy]
+
+  - id: capital-japan
+    prompt: "What is the capital of Japan? Reply with just the city name."
+    expected: "Tokyo"
+    scorers: [exact]
+    tags: [geography, easy]
+
+  - id: cell-powerhouse
+    prompt: "What is commonly called the powerhouse of the cell?"
+    expected: "mitochondria"
+    scorers: [contains]
+    tags: [biology, easy]
+
+  - id: speed-of-light
+    prompt: "What is the speed of light in a vacuum, in km/s? Reply with just the number."
+    expected: "300000"
+    scorers: [exact]
+    tags: [physics, medium]
+
+  - id: pythagorean-theorem
+    prompt: "In a right triangle with legs 3 and 4, what is the hypotenuse? Reply with just the number."
+    expected: "5"
+    scorers: [exact]
+    tags: [math, easy]

@@ -1,0 +1,20 @@
+# API keys — NEVER commit this
+.env
+
+# evalkit run output
+.evalkit/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# Tools
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/

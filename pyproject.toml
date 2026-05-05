@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "evalkit"
+version = "0.1.0"
+description = "Production-grade LLM evaluation and benchmark harness"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+keywords = ["llm", "evaluation", "benchmark", "ai", "testing"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "click>=8.0",
+  "rich>=13.0",
+  "pyyaml>=6.0",
+  "openai>=1.0",
+  "anthropic>=0.25",
+  "jinja2>=3.0",
+  "pydantic>=2.0",
+  "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+# pip install evalkit[embed]  — adds embedding scorer (large download ~1GB)
+embed = ["sentence-transformers>=2.0"]
+# pip install evalkit[dev]    — adds test tooling
+dev   = ["pytest>=7.0", "pytest-mock>=3.0"]
+# pip install evalkit[all]    — everything
+all   = ["evalkit[embed,dev]"]
+
+[project.urls]
+Homepage   = "https://github.com/yourusername/evalkit"
+Issues     = "https://github.com/yourusername/evalkit/issues"
+
+# The `evalkit` shell command — must point inside the package after install
+[project.scripts]
+evalkit = "evalkit.cli:main"
+
+# Include the full evalkit package (templates, etc.) in the wheel
+[tool.hatch.build.targets.wheel]
+packages = ["evalkit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

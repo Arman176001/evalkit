@@ -1,0 +1,32 @@
+name: "summarise-v1"
+description: "Summarisation quality — tests using LLM judge and embedding similarity."
+model: "gpt-4o-mini"
+judge_model: "claude-haiku-4-5-20251001"
+temperature: 0.0
+max_tokens: 256
+
+cases:
+  - id: eiffel-summary
+    prompt: "Summarise the following in 1–2 sentences: {input}"
+    input: >
+      The Eiffel Tower is a wrought-iron lattice tower on the Champ de Mars in Paris, France.
+      It is named after the engineer Gustave Eiffel, whose company designed and built the tower
+      from 1887 to 1889 as the centrepiece of the 1889 World's Fair.
+    expected: "The Eiffel Tower is an iron structure in Paris built by Gustave Eiffel for the 1889 World's Fair."
+    scorers: [llm_judge, embed]
+    rubric: "Does the summary accurately capture: location (Paris), designer (Gustave Eiffel), when built (1887–1889), purpose (World's Fair)? Is it 1–2 sentences?"
+    tags: [summarisation, medium]
+
+  - id: gravity-explain
+    prompt: "Explain gravity in one sentence suitable for a 10-year-old."
+    expected: "Gravity is the invisible force that pulls objects toward each other and keeps us on the ground."
+    scorers: [llm_judge]
+    rubric: "Is the explanation accurate, simple enough for a child, and expressed in a single sentence?"
+    tags: [science, explanation, easy]
+
+  - id: photosynthesis-summary
+    prompt: "Summarise photosynthesis in one sentence."
+    expected: "photosynthesis converts sunlight, water, and carbon dioxide into glucose and oxygen"
+    scorers: [llm_judge, embed]
+    rubric: "Does the summary mention sunlight/light energy, CO2, water, glucose/sugar, and oxygen as outputs?"
+    tags: [biology, summarisation, medium]

@@ -1,0 +1,10 @@
+{"id": "math-001", "prompt": "What is 2 + 2? Reply with just the number.", "expected": "4", "scorer": "exact_match", "tags": ["math", "arithmetic"]}
+{"id": "math-002", "prompt": "What is 15 * 7? Reply with just the number.", "expected": "105", "scorer": "exact_match", "tags": ["math", "arithmetic"]}
+{"id": "capital-001", "prompt": "What is the capital of France? Reply with just the city name.", "expected": "Paris", "scorer": "exact_match", "tags": ["geography"]}
+{"id": "capital-002", "prompt": "What is the capital of Japan? Reply with just the city name.", "expected": "Tokyo", "scorer": "exact_match", "tags": ["geography"]}
+{"id": "contains-001", "prompt": "Name three primary colors.", "expected": "red", "scorer": "contains", "tags": ["knowledge"]}
+{"id": "contains-002", "prompt": "What is the powerhouse of the cell?", "expected": "mitochondria", "scorer": "contains", "tags": ["biology"]}
+{"id": "contains-003", "prompt": "Who wrote Romeo and Juliet?", "expected": "Shakespeare", "scorer": "contains", "tags": ["literature"]}
+{"id": "code-001", "prompt": "What Python keyword is used to define a function?", "expected": "def", "scorer": "contains", "tags": ["coding", "python"]}
+{"id": "code-002", "prompt": "In Python, what built-in function returns the length of a list?", "expected": "len", "scorer": "contains", "tags": ["coding", "python"]}
+{"id": "reasoning-001", "prompt": "If a train travels 60 miles per hour for 2 hours, how many miles does it travel? Reply with just the number.", "expected": "120", "scorer": "exact_match", "tags": ["math", "reasoning"]}

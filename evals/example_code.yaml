@@ -1,0 +1,40 @@
+name: "code-v1"
+description: "Code generation and explanation — Python focus."
+model: "gpt-4o-mini"
+judge_model: "claude-haiku-4-5-20251001"
+temperature: 0.0
+max_tokens: 512
+
+cases:
+  - id: python-len
+    prompt: "What Python built-in function returns the length of a list? Reply with just the function name."
+    expected: "len"
+    scorers: [exact]
+    tags: [python, easy]
+
+  - id: python-list-comp
+    prompt: "Write a Python list comprehension that produces squares of numbers 1 through 5."
+    expected: "[x**2 for x in"
+    scorers: [contains, llm_judge]
+    rubric: "Does the output contain a valid Python list comprehension that produces [1, 4, 9, 16, 25]?"
+    tags: [python, comprehensions, medium]
+
+  - id: python-fibonacci
+    prompt: "Write a recursive Python function that returns the nth Fibonacci number."
+    expected: "def fibonacci"
+    scorers: [contains, llm_judge]
+    rubric: "Does the code define a Python function using recursion that correctly computes Fibonacci numbers? Is it syntactically valid?"
+    tags: [python, algorithms, medium]
+
+  - id: python-dict-comp
+    prompt: "Write a Python dict comprehension that maps each number in [1, 2, 3, 4, 5] to its square."
+    expected: "{x: x**2 for x in"
+    scorers: [contains, llm_judge]
+    rubric: "Does the output contain a valid Python dict comprehension producing {1:1, 2:4, 3:9, 4:16, 5:25}?"
+    tags: [python, comprehensions, medium]
+
+  - id: python-def-keyword
+    prompt: "What Python keyword is used to define a function?"
+    expected: "def"
+    scorers: [contains]
+    tags: [python, easy]

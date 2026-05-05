@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ run.suite.name }} — EvalKit Report</title>
+<style>
+:root {
+  --pass: #16a34a; --pass-bg: #dcfce7;
+  --fail: #dc2626; --fail-bg: #fee2e2;
+  --regression: #ea580c; --regression-bg: #ffedd5;
+  --improvement: #2563eb; --improvement-bg: #dbeafe;
+  --bg: #f8fafc; --card: #fff; --border: #e2e8f0;
+  --text: #1e293b; --muted: #64748b;
+  --header: #0f172a;
+  --mono: 'Courier New', Courier, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; font-size: 14px; }
+
+/* ── Header ── */
+header { background: var(--header); color: #f1f5f9; padding: 28px 40px; }
+header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+header .meta { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 10px; font-size: 0.8rem; color: #94a3b8; }
+header .meta span::before { content: ''; }
+{% if run.suite.description %}
+header .desc { margin-top: 8px; font-size: 0.85rem; color: #94a3b8; }
+{% endif %}
+
+/* ── Layout ── */
+.container { max-width: 1280px; margin: 0 auto; padding: 32px 40px; }
+
+/* ── Stats ── */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; text-align: center; }
+.stat .val { font-size: 2rem; font-weight: 700; line-height: 1; }
+.stat .lbl { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-top: 6px; }
+.stat.pass .val { color: var(--pass); }
+.stat.fail .val { color: var(--fail); }
+
+/* ── Progress bar ── */
+.bar-wrap { background: var(--border); border-radius: 99px; height: 10px; margin-bottom: 28px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--pass), #4ade80); }
+
+/* ── Diff notice ── */
+.diff-notice { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; margin-bottom: 24px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.diff-notice strong { font-size: 0.85rem; }
+
+/* ── Badges ── */
+.badge { display: inline-block; border-radius: 99px; padding: 2px 9px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; }
+.badge.pass { background: var(--pass-bg); color: var(--pass); }
+.badge.fail { background: var(--fail-bg); color: var(--fail); }
+.badge.regression { background: var(--regression-bg); color: var(--regression); }
+.badge.improvement { background: var(--improvement-bg); color: var(--improvement); }
+
+/* ── Table ── */
+.table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+thead th { background: #f1f5f9; padding: 11px 14px; text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody tr.case-row { cursor: pointer; transition: background 0.1s; }
+tbody tr.case-row:hover td { background: #f8fafc; }
+tbody tr.case-row.pass-row td:first-child { border-left: 3px solid var(--pass); }
+tbody tr.case-row.fail-row td:first-child { border-left: 3px solid var(--fail); }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+.cell-id { font-weight: 600; font-size: 0.8rem; white-space: nowrap; }
+.cell-text { font-size: 0.8rem; color: var(--muted); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scorers { display: flex; flex-wrap: wrap; gap: 4px; }
+.scorer-chip { display: inline-flex; align-items: center; gap: 4px; background: #f1f5f9; border-radius: 4px; padding: 2px 7px; font-size: 0.7rem; }
+.dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.dot.pass { background: var(--pass); }
+.dot.fail { background: var(--fail); }
+.lat { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+
+/* ── Detail rows ── */
+tr.detail-row td { padding: 0; }
+.detail-inner { padding: 18px; background: #f8fafc; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.detail-block h4 { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+.detail-block pre { font-family: var(--mono); font-size: 0.75rem; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 10px; max-height: 160px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+.score-detail { margin-bottom: 8px; font-size: 0.78rem; }
+.score-detail .sname { font-weight: 600; }
+.score-detail .sreason { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tag { background: var(--border); border-radius: 4px; padding: 2px 7px; font-size: 0.68rem; color: var(--muted); }
+.toggle-icon { float: right; color: var(--muted); font-size: 0.7rem; user-select: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>{{ run.suite.name }}</h1>
+  <div class="meta">
+    <span>Model: <strong>{{ run.model }}</strong></span>
+    <span>Provider: {{ run.provider }}</span>
+    <span>{{ run.timestamp }}</span>
+    <span>{{ run.total }} case{{ 's' if run.total != 1 }}</span>
+  </div>
+  {% if run.suite.description %}<div class="desc">{{ run.suite.description }}</div>{% endif %}
+</header>
+
+<div class="container">
+
+  <div class="stats">
+    <div class="stat pass"><div class="val">{{ run.passed }}</div><div class="lbl">Passed</div></div>
+    <div class="stat fail"><div class="val">{{ run.failed }}</div><div class="lbl">Failed</div></div>
+    <div class="stat"><div class="val">{{ "%.0f"|format(run.pass_rate * 100) }}%</div><div class="lbl">Pass Rate</div></div>
+    <div class="stat"><div class="val">{{ "%.0f"|format(run.avg_latency_ms) }}ms</div><div class="lbl">Avg Latency</div></div>
+    <div class="stat"><div class="val">{{ run.total_tokens }}</div><div class="lbl">Total Tokens</div></div>
+  </div>
+
+  <div class="bar-wrap" title="{{ '%.1f'|format(run.pass_rate * 100) }}% pass rate">
+    <div class="bar-fill" style="width:{{ run.pass_rate * 100 }}%"></div>
+  </div>
+
+  {% if diff and (diff.regressions or diff.improvements) %}
+  <div class="diff-notice">
+    <strong>Diff vs previous run:</strong>
+    {% if diff.regressions %}<span class="badge regression">{{ diff.regressions|length }} regression{{ 's' if diff.regressions|length != 1 }}</span>{% endif %}
+    {% if diff.improvements %}<span class="badge improvement">{{ diff.improvements|length }} improvement{{ 's' if diff.improvements|length != 1 }}</span>{% endif %}
+  </div>
+  {% endif %}
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Prompt</th>
+          <th>Output</th>
+          <th>Scorers</th>
+          <th>Latency</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in run.case_results %}
+        <tr class="case-row {{ 'pass-row' if r.passed else 'fail-row' }}" onclick="toggle('d{{ loop.index }}')">
+          <td>
+            <div class="cell-id">
+              {{ r.case.id }}
+              <span class="toggle-icon" id="icon-d{{ loop.index }}">▶</span>
+            </div>
+            {% if diff %}
+              {% if r.case.id in diff.regressions %}<div style="margin-top:4px"><span class="badge regression">regression</span></div>{% endif %}
+              {% if r.case.id in diff.improvements %}<div style="margin-top:4px"><span class="badge improvement">improvement</span></div>{% endif %}
+            {% endif %}
+          </td>
+          <td><div class="cell-text" title="{{ r.case.prompt }}">{{ r.case.prompt }}</div></td>
+          <td><div class="cell-text" title="{{ r.output }}">{{ r.output }}</div></td>
+          <td>
+            <div class="scorers">
+            {% for sr in r.scorer_results %}
+              <div class="scorer-chip">
+                <div class="dot {{ 'pass' if sr.passed else 'fail' }}"></div>
+                {{ sr.scorer_name }} {{ "%.2f"|format(sr.score) }}
+              </div>
+            {% endfor %}
+            </div>
+          </td>
+          <td class="lat">{{ "%.0f"|format(r.latency_ms) }}ms</td>
+          <td><span class="badge {{ 'pass' if r.passed else 'fail' }}">{{ 'PASS' if r.passed else 'FAIL' }}</span></td>
+        </tr>
+        <tr class="detail-row" id="d{{ loop.index }}" style="display:none">
+          <td colspan="6">
+            <div class="detail-inner">
+              <div class="detail-block">
+                <h4>Full Prompt</h4>
+                <pre>{{ r.case.prompt }}</pre>
+              </div>
+              <div class="detail-block">
+                <h4>Full Output</h4>
+                <pre>{{ r.output }}</pre>
+              </div>
+              {% if r.case.expected %}
+              <div class="detail-block">
+                <h4>Expected</h4>
+                <pre>{{ r.case.expected }}</pre>
+              </div>
+              {% endif %}
+              <div class="detail-block">
+                <h4>Scorer Details</h4>
+                {% for sr in r.scorer_results %}
+                <div class="score-detail">
+                  <span class="sname">{{ sr.scorer_name }}</span>
+                  — score <strong>{{ "%.3f"|format(sr.score) }}</strong>
+                  · <span class="badge {{ 'pass' if sr.passed else 'fail' }}" style="font-size:0.65rem">{{ 'pass' if sr.passed else 'fail' }}</span>
+                  {% if sr.reason %}<div class="sreason">{{ sr.reason }}</div>{% endif %}
+                </div>
+                {% endfor %}
+              </div>
+              {% if r.case.tags %}
+              <div class="detail-block">
+                <h4>Tags</h4>
+                <div class="tags">{% for t in r.case.tags %}<span class="tag">{{ t }}</span>{% endfor %}</div>
+              </div>
+              {% endif %}
+              {% if r.case.rubric %}
+              <div class="detail-block">
+                <h4>Rubric</h4>
+                <pre>{{ r.case.rubric }}</pre>
+              </div>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+function toggle(id) {
+  var row = document.getElementById(id);
+  var icon = document.getElementById('icon-' + id);
+  if (!row) return;
+  var open = row.style.display !== 'none';
+  row.style.display = open ? 'none' : '';
+  if (icon) icon.textContent = open ? '▶' : '▼';
+}
+</script>
+</body>
+</html>
