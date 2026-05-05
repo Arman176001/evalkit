@@ -2,7 +2,10 @@ name: Publish to PyPI
 
 on:
   release:
-    types: [published]   # triggers when you publish a GitHub Release
+    types: [published]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
