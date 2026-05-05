@@ -1,103 +1,234 @@
-# evalkit
+<div align="center">
 
-A production-grade LLM evaluation and benchmark harness. Point it at a YAML test suite, get a rich terminal table, a self-contained HTML report, a JSON results file for regression tracking, and a diff against the last run.
+# Evalkit-bench
+
+**Production-grade LLM evaluation and benchmark harness**
+
+[![Tests](https://github.com/Arman176001/evalkit/actions/workflows/test.yml/badge.svg)](https://github.com/Arman176001/evalkit/actions/workflows/test.yml)
+[![PyPI](https://img.shields.io/pypi/v/evalkit-bench)](https://pypi.org/project/evalkit-bench/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+Point it at a YAML test suite → get a live terminal table, a self-contained HTML report, regression tracking, and side-by-side model comparisons.
+
+</div>
+
+---
+
+## What it does
+
+```
+$ evalkit run evals/factual.yaml --model gpt-4o-mini
+
+  ✓  [1/5]  capital-france
+  ✓  [2/5]  capital-japan
+  ✓  [3/5]  cell-powerhouse
+  ✗  [4/5]  speed-of-light
+  ✓  [5/5]  pythagorean
+
+╭──────────────────┬──────────────────────────┬──────────────┬──────────┬────────╮
+│ ID               │ Prompt                   │ Output       │ Scorers  │ Result │
+├──────────────────┼──────────────────────────┼──────────────┼──────────┼────────┤
+│ capital-france   │ What is the capital of…  │ Paris        │ exact ✓  │  PASS  │
+│ speed-of-light   │ What is the speed of…    │ 299,792 km/s │ exact ✗  │  FAIL  │
+╰──────────────────┴──────────────────────────┴──────────────┴──────────┴────────╯
+
+  ████████████████░░░░  80%  4/5 passed · avg 340ms · 1,200 tokens
+
+  Diff vs previous: 1 regression
+  HTML report → .evalkit/runs/20260505T120000_factual-v1_report.html
+```
+
+---
 
 ## Install
 
 ```bash
-pip install -e .
+pip install evalkit-bench
 ```
 
-Copy `.env.example` to `.env` and fill in your API keys:
+Add the embedding scorer (optional, ~1 GB download):
 
 ```bash
-cp .env.example .env
+pip install "evalkit-bench[embed]"
 ```
+
+Set your API keys — create a `.env` file in your project:
+
+```bash
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+---
 
 ## Quick start
 
+**Run a suite:**
 ```bash
 evalkit run evals/example_factual.yaml
 ```
 
-Override the model at runtime:
-
+**Override model at runtime:**
 ```bash
+evalkit run evals/example_factual.yaml --model gpt-4o
 evalkit run evals/example_factual.yaml --model claude-haiku-4-5-20251001
-evalkit run evals/example_code.yaml    --model gpt-4o
 ```
 
-The command prints a live progress ticker, then a results table, saves a JSON run file, and opens an HTML report in your browser.
+**Compare multiple models side-by-side:**
+```bash
+evalkit compare evals/example_factual.yaml \
+  --models gpt-4o-mini,gpt-4o,claude-haiku-4-5-20251001
+```
 
-## YAML reference
+```
+╭──────────────────┬─────────────┬─────────┬──────────────╮
+│ Case             │ gpt-4o-mini │  gpt-4o │  haiku-4-5   │
+├──────────────────┼─────────────┼─────────┼──────────────┤
+│ capital-france   │    PASS     │  PASS   │     PASS     │
+│ cell-powerhouse  │    PASS     │  PASS   │     FAIL     │
+│ speed-of-light   │    PASS     │  PASS   │     PASS     │
+├──────────────────┼─────────────┼─────────┼──────────────┤
+│ Pass rate        │    100%     │  100%   │     80%      │
+│ Avg latency      │    340ms    │  820ms  │    280ms     │
+│ Total tokens     │   1,200     │  2,400  │     950      │
+╰──────────────────┴─────────────┴─────────┴──────────────╯
+```
+
+---
+
+## Writing a benchmark suite
+
+Suites are plain YAML files:
 
 ```yaml
-name: "my-suite"                        # required — used in filenames and reports
-description: "Optional one-liner"
-model: "gpt-4o-mini"                    # default model for this suite
-judge_model: "claude-haiku-4-5-20251001"  # model used by the llm_judge scorer
+name: "factual-qa-v1"
+description: "Tests basic factual recall"
+model: "gpt-4o-mini"             # default model
+judge_model: "claude-haiku-4-5-20251001"  # used by llm_judge scorer
 temperature: 0.0
 max_tokens: 512
-system: null                            # optional system prompt for every case
 
 cases:
-  - id: my-case                         # required, must be unique within the suite
-    prompt: "What is {input}?"          # supports {input} substitution
-    input: "the capital of France"      # replaces {input} in prompt
-    expected: "Paris"                   # reference answer (required by exact/contains/embed)
-    scorers: [exact]                    # list of scorer names (see below)
-    rubric: "Is the answer correct?"    # guidance for llm_judge
-    tags: [geography, easy]             # arbitrary labels for filtering
-    pattern: null                       # regex pattern for ExactScorer
+  - id: capital-france
+    prompt: "What is the capital of France? Reply with just the city name."
+    expected: "Paris"
+    scorers: [exact]
+    tags: [geography, easy]
+
+  - id: summarise-article
+    prompt: "Summarise in 2 sentences: {input}"
+    input: "The Eiffel Tower was built between 1887 and 1889..."
+    expected: "The Eiffel Tower was built in the late 1880s."
+    scorers: [llm_judge, embed]
+    rubric: "Does the summary capture the key facts without hallucinating?"
+    tags: [summarisation, medium]
 ```
+
+### All case fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `id` | ✅ | Unique identifier within the suite |
+| `prompt` | ✅ | Prompt sent to the model. Supports `{input}` substitution |
+| `expected` | — | Reference answer (required by `exact`, `contains`, `embed`) |
+| `input` | — | Replaces `{input}` in the prompt |
+| `scorers` | — | List of scorers (default: `[exact]`) |
+| `rubric` | — | Evaluation guidance for `llm_judge` |
+| `tags` | — | Arbitrary labels for filtering |
+| `pattern` | — | Regex pattern for `exact` scorer |
+
+---
 
 ## Scorers
 
-| Name | Passes when | Use for |
-|------|-------------|---------|
-| `exact` | Output exactly matches expected (case-insensitive). Substring match gives partial credit (0.5) but doesn't pass at default threshold. | Short, deterministic answers |
-| `contains` | Expected string appears anywhere in output | Keywords, code snippets |
-| `llm_judge` | Claude scores the output ≥ 3.5/5 | Open-ended, subjective quality |
+| Scorer | Passes when | Best for |
+|--------|-------------|----------|
+| `exact` | Output matches expected (case-insensitive). Exact → 1.0, substring → 0.5 | Short deterministic answers |
+| `contains` | Expected string appears anywhere in output | Keywords, function names |
+| `llm_judge` | Claude rates the output ≥ 3.5 / 5 | Open-ended quality, summarisation |
 | `embed` | Cosine similarity of sentence embeddings ≥ 0.7 | Semantic equivalence |
 
-Multiple scorers per case are AND-ed: a case passes only if **all** scorers pass.
+Multiple scorers are **AND-ed** — a case passes only if every scorer passes.
 
-## CLI reference
-
-```
-evalkit run <suite.yaml> [--model MODEL] [--output-dir DIR] [--no-report]
-evalkit diff <run_a.json> <run_b.json>
-evalkit list-runs [--runs-dir DIR]
-evalkit show <run_id> [--runs-dir DIR]
-```
-
-`evalkit run` exit codes: `0` = all passed, `1` = any failed — plugs straight into CI.
+---
 
 ## Regression tracking
 
-Every run is saved to `.evalkit/runs/<timestamp>_<suite_name>.json`. After each run, evalkit automatically diffs against the previous run for the same suite and prints:
+Every run is saved automatically to `.evalkit/runs/`. After each run, evalkit diffs against the previous run for the same suite:
 
 ```
 Diff vs previous: 2 regressions, 1 improvement
 ```
 
-Compare any two runs manually:
-
+**Compare any two runs manually:**
 ```bash
-evalkit diff .evalkit/runs/20260505T090000_factual-qa-v1.json \
-             .evalkit/runs/20260505T100000_factual-qa-v1.json
+evalkit diff .evalkit/runs/20260505T090000_factual-v1.json \
+             .evalkit/runs/20260505T100000_factual-v1.json
 ```
 
-List all saved runs:
-
+**List all runs:**
 ```bash
 evalkit list-runs
 ```
 
+**Inspect a specific run:**
+```bash
+evalkit show 20260505T120000
+```
+
+---
+
+## CLI reference
+
+```
+evalkit run     <suite.yaml>  [--model MODEL] [--output-dir DIR] [--no-report]
+evalkit compare <suite.yaml>  --models MODEL1,MODEL2,...
+evalkit diff    <run_a.json>  <run_b.json>
+evalkit list-runs             [--runs-dir DIR]
+evalkit show    <run_id>      [--runs-dir DIR]
+```
+
+> **CI-friendly:** `evalkit run` exits with `0` if all cases pass, `1` if any fail.
+
+---
+
+## HTML report
+
+Every run generates a self-contained HTML report — no CDN, works offline, sendable as an attachment.
+
+- Pass/fail per case with color coding
+- Click any row to expand full prompt, output, and judge reasoning
+- Regression and improvement badges when diffing against a previous run
+- Overall pass-rate bar and summary stats
+
+---
+
 ## Roadmap
 
-- Web UI dashboard for run history
-- Gemini and local (Ollama) providers
-- Custom scorer plugins via entry points
-- Parallel case execution
-- CI GitHub Action
+- [ ] Gemini and Ollama (local) providers
+- [ ] Parallel case execution
+- [ ] Web UI dashboard for run history
+- [ ] Custom scorer plugins via entry points
+- [ ] `evalkit init` — interactive suite generator
+
+---
+
+## Contributing
+
+```bash
+git clone https://github.com/Arman176001/evalkit
+cd evalkit
+pip install -e ".[dev]"
+python -m pytest tests/ -v
+```
+
+All 44 tests run in under 3 seconds with no API calls required.
+
+---
+
+<div align="center">
+
+Made by [Arman](https://github.com/Arman176001) · MIT License
+
+</div>
