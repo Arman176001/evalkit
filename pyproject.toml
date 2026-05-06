@@ -4,7 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evalkit-bench"
-version = "0.1.2"
+version = "0.1.3"
+authors = [
+  { name = "Arman Chaudhary", email = "armanchaudhary176001@gmail.com" }
+]
 description = "Production-grade LLM evaluation and benchmark harness"
 readme = "README.md"
 license = { text = "MIT" }
